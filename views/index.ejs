@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fix Access | Dashboard</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="app-topbar">
+        <div>
+          <p class="eyebrow">Sesion activa</p>
+          <h2><%= ui.heading %></h2>
+        </div>
+        <div class="app-topbar-actions">
+          <div class="user-badge">
+            <strong><%= currentUser.fullName %></strong>
+            <span><%= currentRole ? currentRole.name : currentUser.roleCode %> - @<%= currentUser.username %></span>
+          </div>
+          <form method="post" action="/logout">
+            <button class="logout-button" type="submit">Cerrar sesion</button>
+          </form>
+        </div>
+      </header>
+
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><%= currentRole ? currentRole.name : currentUser.roleCode %></p>
+          <h1><%= ui.heading %></h1>
+          <p class="lead"><%= ui.description %></p>
+          <div class="hero-badges">
+            <span>Operacion simulada: <strong><%= operationWindow.label %></strong></span>
+            <span>Usuario actual: <strong><%= currentUser.username %></strong></span>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <div class="hero-panel-label">Modulos habilitados</div>
+          <ul class="hero-panel-list">
+            <% ui.modules.forEach((module) => { %>
+              <li><%= module %></li>
+            <% }) %>
+          </ul>
+        </div>
+      </header>
+
+      <% if (noticeMessage || errorMessage) { %>
+        <section class="flash-stack">
+          <% if (noticeMessage) { %>
+            <article class="flash-card flash-success"><%= noticeMessage %></article>
+          <% } %>
+          <% if (errorMessage) { %>
+            <article class="flash-card flash-error"><%= errorMessage %></article>
+          <% } %>
+        </section>
+      <% } %>
+
+      <section class="summary-grid">
+        <% summaryCards.forEach((card) => { %>
+          <article class="summary-card summary-<%= card.tone %>">
+            <p><%= card.label %></p>
+            <strong><%= card.value %></strong>
+          </article>
+        <% }) %>
+      </section>
+
+      <% if (ui.sections.userAdmin) { %>
+        <section class="panel-section" id="admin-tools">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Herramientas del administrador</p>
+              <h2>Crear usuarios y controlar accesos internos</h2>
+            </div>
+            <p class="section-copy">
+              Solo el administrador puede crear cuentas, asignar roles y bloquear o reactivar usuarios del sistema.
+            </p>
+          </div>
+
+          <div class="dual-layout">
+            <article class="tool-panel">
+              <div class="tool-header">
+                <div>
+                  <p class="eyebrow">Nuevo usuario</p>
+                  <h3>Alta de cuenta</h3>
+                </div>
+              </div>
+
+              <p class="panel-copy">
+                Crea administradores, creadores, verificadores u operadores para que cada perfil trabaje solo con sus tareas asignadas.
+              </p>
+
+              <form class="stack-form" method="post" action="/admin/users">
+                <div class="form-grid">
+                  <label>
+                    <span>Nombre completo</span>
+                    <input name="fullName" type="text" value="<%= adminForm.fields.fullName %>" required />
+                  </label>
+                  <label>
+                    <span>Usuario</span>
+                    <input name="username" type="text" value="<%= adminForm.fields.username %>" placeholder="operador-norte" required />
+                  </label>
+                  <label>
+                    <span>Contrasena temporal</span>
+                    <input name="password" type="text" placeholder="clave123" required />
+                  </label>
+                  <label>
+                    <span>Rol</span>
+                    <select name="roleCode" required>
+                      <% availableRoles.forEach((role) => { %>
+                        <option value="<%= role.code %>" <%= adminForm.fields.roleCode === role.code ? "selected" : "" %>>
+                          <%= role.name %>
+                        </option>
+                      <% }) %>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="action-row">
+                  <button class="primary-action" type="submit">Crear usuario</button>
+                </div>
+              </form>
+            </article>
+
+            <article class="tool-panel">
+              <div class="tool-header">
+                <div>
+                  <p class="eyebrow">Cuentas registradas</p>
+                  <h3>Usuarios del sistema</h3>
+                </div>
+                <span class="inline-badge"><%= managedUsers.length %> cuentas</span>
+              </div>
+
+              <div class="tool-card-grid">
+                <% managedUsers.forEach((account) => { %>
+                  <article class="user-card">
+                    <div class="request-topline">
+                      <strong>@<%= account.username %></strong>
+                      <span class="status-pill status-<%= account.status.toLowerCase() %>"><%= account.statusLabel %></span>
+                    </div>
+                    <h3><%= account.fullName %></h3>
+                    <p class="request-meta">Rol asignado: <strong><%= account.roleName %></strong></p>
+                    <p class="request-meta">Clave demo: <code><%= account.displayPassword %></code></p>
+                    <p class="request-time">
+                      Creado por <strong><%= account.createdBy %></strong> el <strong><%= account.createdAtLabel %></strong>
+                    </p>
+                    <div class="request-actions">
+                      <% if (account.username === currentUser.username) { %>
+                        <span class="secondary-link static-chip">Sesion actual</span>
+                      <% } else { %>
+                        <form method="post" action="/admin/users/<%= encodeURIComponent(account.username) %>/toggle-status">
+                          <button class="<%= account.status === 'ACTIVE' ? 'danger-button' : 'secondary-button' %>" type="submit">
+                            <%= account.status === "ACTIVE" ? "Bloquear cuenta" : "Reactivar cuenta" %>
+                          </button>
+                        </form>
+                      <% } %>
+                    </div>
+                  </article>
+                <% }) %>
+              </div>
+            </article>
+          </div>
+        </section>
+      <% } %>
+
+      <% if (ui.sections.creatorTools) { %>
+        <section class="panel-section" id="creator-tools">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Herramientas del creador</p>
+              <h2>Crear ticket y responder solicitudes</h2>
+            </div>
+            <p class="section-copy">
+              Puedes crear un ticket desde cero o usar una solicitud urgente del operador para precargar los datos.
+            </p>
+          </div>
+          <div class="dual-layout">
+            <article class="tool-panel">
+              <div class="tool-header">
+                <div>
+                  <p class="eyebrow">Nuevo ticket</p>
+                  <h3>Formulario de creacion</h3>
+                </div>
+                <% if (creatorForm.sourceRequest) { %>
+                  <span class="inline-badge">Origen: <%= creatorForm.sourceRequest.id %></span>
+                <% } %>
+              </div>
+
+              <form class="stack-form" method="post" action="/creator/tickets">
+                <input type="hidden" name="requestId" value="<%= creatorForm.requestId %>" />
+                <div class="form-grid">
+                  <label>
+                    <span>RUT</span>
+                    <input name="rut" type="text" value="<%= creatorForm.fields.rut %>" required />
+                  </label>
+                  <label>
+                    <span>Empresa</span>
+                    <input name="company" type="text" value="<%= creatorForm.fields.company %>" required />
+                  </label>
+                  <label>
+                    <span>Nombre</span>
+                    <input name="firstName" type="text" value="<%= creatorForm.fields.firstName %>" required />
+                  </label>
+                  <label>
+                    <span>Apellido</span>
+                    <input name="lastName" type="text" value="<%= creatorForm.fields.lastName %>" required />
+                  </label>
+                  <label>
+                    <span>Responsable interno</span>
+                    <input name="hostName" type="text" value="<%= creatorForm.fields.hostName %>" required />
+                  </label>
+                  <label>
+                    <span>Actividad</span>
+                    <input
+                      name="activityDescription"
+                      type="text"
+                      value="<%= creatorForm.fields.activityDescription %>"
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span>Entrada estimada</span>
+                    <input
+                      name="scheduledEntryAt"
+                      type="datetime-local"
+                      value="<%= creatorForm.fields.scheduledEntryAt %>"
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span>Salida estimada</span>
+                    <input
+                      name="scheduledExitAt"
+                      type="datetime-local"
+                      value="<%= creatorForm.fields.scheduledExitAt %>"
+                      required
+                    />
+                  </label>
+                </div>
+
+                <label class="full-width-label">
+                  <span>Notas u observaciones</span>
+                  <textarea name="notes" rows="4"><%= creatorForm.fields.notes %></textarea>
+                </label>
+
+                <div class="action-row">
+                  <button class="primary-action" type="submit">Crear ticket pendiente de verificacion</button>
+                  <% if (creatorForm.sourceRequest) { %>
+                    <a class="secondary-link" href="/dashboard#creator-tools">Limpiar formulario</a>
+                  <% } %>
+                </div>
+              </form>
+            </article>
+
+            <article class="tool-panel">
+              <div class="tool-header">
+                <div>
+                  <p class="eyebrow">Solicitudes del operador</p>
+                  <h3>Bandeja para respuesta</h3>
+                </div>
+              </div>
+
+              <div class="tool-card-grid">
+                <% operatorRequests.forEach((request) => { %>
+                  <article class="request-card request-card-expanded">
+                    <div class="request-topline">
+                      <strong><%= request.id %></strong>
+                      <span class="status-pill status-<%= request.status.toLowerCase() %>"><%= request.statusLabel %></span>
+                    </div>
+                    <h3><%= request.fullName %></h3>
+                    <p class="request-meta"><%= request.rut %> - <%= request.company %></p>
+                    <p class="request-meta">Responsable: <%= request.hostName %></p>
+                    <p class="request-meta">
+                      Horario solicitado:
+                      <%= request.desiredEntryAt ? request.desiredEntryAt.slice(11, 16) : "--:--" %>
+                      a
+                      <%= request.desiredExitAt ? request.desiredExitAt.slice(11, 16) : "--:--" %>
+                    </p>
+                    <p class="request-notes"><strong>Actividad:</strong> <%= request.activityDescription %></p>
+                    <p class="request-notes"><strong>Detalle:</strong> <%= request.notes %></p>
+                    <% if (request.responseNotes) { %>
+                      <p class="request-response"><strong>Seguimiento:</strong> <%= request.responseNotes %></p>
+                    <% } %>
+                    <div class="request-actions">
+                      <% if (request.status === "PENDIENTE_RESPUESTA") { %>
+                        <form method="post" action="/creator/requests/<%= request.id %>/take">
+                          <button class="secondary-button" type="submit">Tomar solicitud</button>
+                        </form>
+                      <% } %>
+                      <a class="secondary-link" href="/dashboard?requestId=<%= request.id %>#creator-tools">Usar datos para ticket</a>
+                    </div>
+                  </article>
+                <% }) %>
+              </div>
+            </article>
+          </div>
+        </section>
+      <% } %>
+
+      <% if (ui.sections.verifierTools) { %>
+        <section class="panel-section" id="verification-tools">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Herramientas del verificador</p>
+              <h2>Cola de revision y decision</h2>
+            </div>
+            <p class="section-copy">
+              Cada decision actualiza el estado del ticket y deja trazabilidad para el creador y el operador.
+            </p>
+          </div>
+
+          <div class="verification-grid">
+            <article class="tool-panel">
+              <div class="tool-header">
+                <div>
+                  <p class="eyebrow">Pendientes</p>
+                  <h3>Tickets por resolver</h3>
+                </div>
+              </div>
+
+              <% if (!verificationQueue.length) { %>
+                <div class="empty-state">
+                  <strong>No hay tickets pendientes de revision.</strong>
+                  <p>La cola del verificador esta al dia.</p>
+                </div>
+              <% } else { %>
+                <div class="tool-card-grid">
+                  <% verificationQueue.forEach((ticket) => { %>
+                    <article class="verification-card">
+                      <div class="request-topline">
+                        <strong><%= ticket.ticketCode %></strong>
+                        <span class="status-pill status-<%= ticket.status.toLowerCase() %>"><%= ticket.statusLabel %></span>
+                      </div>
+                      <h3><%= ticket.person.firstName %> <%= ticket.person.lastName %></h3>
+                      <p class="request-meta"><%= ticket.person.rut %> - <%= ticket.company %></p>
+                      <p class="request-meta">Responsable: <%= ticket.hostName %></p>
+                      <p class="request-meta">
+                        Horario: <%= ticket.scheduledEntryAt.slice(11, 16) %> a <%= ticket.scheduledExitAt.slice(11, 16) %>
+                      </p>
+                      <p class="request-notes"><strong>Actividad:</strong> <%= ticket.activityDescription %></p>
+                      <p class="request-notes"><strong>Notas:</strong> <%= ticket.displayNote %></p>
+
+                      <form class="stack-form compact-form" method="post" action="/verifier/tickets/<%= ticket.ticketCode %>/decision">
+                        <label class="full-width-label">
+                          <span>Comentario del verificador</span>
+                          <textarea name="notes" rows="3" placeholder="Ejemplo: Documentacion completa y area disponible."></textarea>
+                        </label>
+                        <div class="decision-row">
+                          <button class="primary-action" type="submit" name="decision" value="approve">Aprobar</button>
+                          <button class="secondary-button" type="submit" name="decision" value="observe">Observar</button>
+                          <button class="danger-button" type="submit" name="decision" value="reject">Rechazar</button>
+                        </div>
+                      </form>
+                    </article>
+                  <% }) %>
+                </div>
+              <% } %>
+            </article>
+
+            <article class="tool-panel">
+              <div class="tool-header">
+                <div>
+                  <p class="eyebrow">Trazabilidad reciente</p>
+                  <h3>Ultimas decisiones</h3>
+                </div>
+              </div>
+
+              <div class="tool-card-grid">
+                <% recentVerifications.forEach((ticket) => { %>
+                  <article class="mini-ticket-card">
+                    <div class="request-topline">
+                      <strong><%= ticket.ticketCode %></strong>
+                      <span class="status-pill status-<%= ticket.status.toLowerCase() %>"><%= ticket.statusLabel %></span>
+                    </div>
+                    <p class="request-meta"><%= ticket.person.firstName %> <%= ticket.person.lastName %></p>
+                    <p class="request-notes"><%= ticket.displayNote %></p>
+                    <p class="request-time">
+                      Verificador:
+                      <strong><%= ticket.verifierName || "Pendiente asignacion" %></strong>
+                    </p>
+                  </article>
+                <% }) %>
+              </div>
+            </article>
+          </div>
+        </section>
+      <% } %>
+
+      <% if (ui.sections.roles) { %>
+        <section class="panel-section">
+          <div class="section-heading">
+            <p class="eyebrow">Mapa de permisos</p>
+            <h2>Roles del sistema</h2>
+          </div>
+          <div class="roles-grid">
+            <% roles.forEach((role) => { %>
+              <article class="role-card">
+                <div class="role-topline">
+                  <span class="role-code"><%= role.code %></span>
+                  <h3><%= role.name %></h3>
+                </div>
+                <p class="role-tagline"><%= role.tagline %></p>
+                <ul class="role-list">
+                  <% role.capabilities.forEach((capability) => { %>
+                    <li><%= capability %></li>
+                  <% }) %>
+                </ul>
+              </article>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+
+      <% if (ui.sections.workflow) { %>
+        <section class="panel-section">
+          <div class="section-heading">
+            <p class="eyebrow">Proceso operativo</p>
+            <h2>Flujo del ticket de acceso</h2>
+          </div>
+          <div class="workflow-grid">
+            <% workflowSteps.forEach((step) => { %>
+              <article class="workflow-step">
+                <span class="workflow-number"><%= step.step %></span>
+                <h3><%= step.title %></h3>
+                <p><%= step.description %></p>
+              </article>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+
+      <% if (ui.sections.access) { %>
+        <section class="panel-section dual-layout">
+          <div class="table-panel">
+            <div class="section-heading compact">
+              <div>
+                <p class="eyebrow">Bandeja operativa</p>
+                <h2><%= ui.tableTitle %></h2>
+              </div>
+              <p class="section-copy"><%= ui.tableDescription %></p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Ticket</th>
+                    <th>Persona</th>
+                    <th>Empresa</th>
+                    <th>Responsable</th>
+                    <th>Estado</th>
+                    <th>Notas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% tickets.forEach((ticket) => { %>
+                    <tr>
+                      <td><%= ticket.ticketCode %></td>
+                      <td><%= ticket.person.firstName %> <%= ticket.person.lastName %></td>
+                      <td><%= ticket.company %></td>
+                      <td><%= ticket.hostName %></td>
+                      <td>
+                        <span class="status-pill status-<%= ticket.status.toLowerCase() %>">
+                          <%= ticket.statusLabel %>
+                        </span>
+                      </td>
+                      <td><%= ticket.verificationNotes || ticket.notes %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="operator-panel">
+            <div class="section-heading compact">
+              <p class="eyebrow">Validacion en porteria</p>
+              <h2>Consulta por RUT</h2>
+            </div>
+            <p class="operator-copy">
+              Simula la experiencia del operador Android. Prueba un RUT aprobado,
+              pendiente o no registrado para ver como responde el sistema.
+            </p>
+
+            <form id="access-check-form" class="access-form">
+              <label for="rut">RUT de la persona</label>
+              <div class="access-input-row">
+                <input
+                  id="rut"
+                  name="rut"
+                  type="text"
+                  value="<%= initialAccessResult.rut %>"
+                  placeholder="15.123.456-7"
+                  autocomplete="off"
+                />
+                <button type="submit">Validar acceso</button>
+              </div>
+            </form>
+
+            <div class="quick-actions">
+              <% quickChecks.forEach((check) => { %>
+                <button class="quick-check" type="button" data-rut="<%= check.rut %>"><%= check.label %></button>
+              <% }) %>
+            </div>
+
+            <article
+              id="access-result-card"
+              class="access-result access-<%= initialAccessResult.severity %>"
+            >
+              <div class="access-result-top">
+                <span id="result-icon" class="access-icon"><%= initialAccessResult.icon %></span>
+                <div>
+                  <p id="result-title" class="access-title"><%= initialAccessResult.title %></p>
+                  <p id="result-message" class="access-message"><%= initialAccessResult.message %></p>
+                </div>
+              </div>
+              <dl class="access-details">
+                <div>
+                  <dt>Persona</dt>
+                  <dd id="detail-person"><%= initialAccessResult.personName %></dd>
+                </div>
+                <div>
+                  <dt>Empresa</dt>
+                  <dd id="detail-company"><%= initialAccessResult.company %></dd>
+                </div>
+                <div>
+                  <dt>Ticket</dt>
+                  <dd id="detail-ticket"><%= initialAccessResult.ticketCode %></dd>
+                </div>
+                <div>
+                  <dt>Estado</dt>
+                  <dd id="detail-status"><%= initialAccessResult.statusLabel %></dd>
+                </div>
+                <div>
+                  <dt>Responsable interno</dt>
+                  <dd id="detail-host"><%= initialAccessResult.hostName %></dd>
+                </div>
+                <div>
+                  <dt>Horario autorizado</dt>
+                  <dd id="detail-schedule"><%= initialAccessResult.scheduleLabel %></dd>
+                </div>
+              </dl>
+              <div class="access-footer">
+                <span>Accion sugerida</span>
+                <strong id="detail-action"><%= initialAccessResult.actionLabel %></strong>
+              </div>
+            </article>
+          </div>
+        </section>
+      <% } else if (ui.sections.tickets) { %>
+        <section class="panel-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Bandeja operativa</p>
+              <h2><%= ui.tableTitle %></h2>
+            </div>
+            <p class="section-copy"><%= ui.tableDescription %></p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ticket</th>
+                  <th>Persona</th>
+                  <th>Empresa</th>
+                  <th>Responsable</th>
+                  <th>Estado</th>
+                  <th>Notas</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% tickets.forEach((ticket) => { %>
+                  <tr>
+                    <td><%= ticket.ticketCode %></td>
+                    <td><%= ticket.person.firstName %> <%= ticket.person.lastName %></td>
+                    <td><%= ticket.company %></td>
+                    <td><%= ticket.hostName %></td>
+                    <td>
+                      <span class="status-pill status-<%= ticket.status.toLowerCase() %>">
+                        <%= ticket.statusLabel %>
+                      </span>
+                    </td>
+                    <td><%= ticket.verificationNotes || ticket.notes %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      <% } %>
+
+      <% if (ui.sections.requests && !ui.sections.creatorTools) { %>
+        <section class="panel-section">
+          <div class="section-heading">
+            <p class="eyebrow">Escalamiento del operador</p>
+            <h2>Solicitudes urgentes</h2>
+          </div>
+          <div class="request-grid">
+            <% operatorRequests.forEach((request) => { %>
+              <article class="request-card">
+                <div class="request-topline">
+                  <strong><%= request.id %></strong>
+                  <span class="status-pill status-<%= request.status.toLowerCase() %>"><%= request.statusLabel %></span>
+                </div>
+                <h3><%= request.fullName %></h3>
+                <p class="request-meta"><%= request.rut %> - <%= request.company %></p>
+                <p class="request-meta">Responsable interno: <%= request.hostName %></p>
+                <p class="request-notes"><%= request.notes %></p>
+                <% if (request.responseNotes) { %>
+                  <p class="request-response"><strong>Seguimiento:</strong> <%= request.responseNotes %></p>
+                <% } %>
+                <p class="request-time">Elevada a las <strong><%= request.requestedAt %></strong></p>
+              </article>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+    </div>
+
+    <% if (ui.sections.access) { %>
+      <script>
+        window.fixAccessInitialResult = <%- serializedInitialAccessResult %>;
+      </script>
+      <script src="/app.js"></script>
+    <% } %>
+  </body>
+</html>

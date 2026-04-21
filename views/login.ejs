@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fix Access | Login</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="login-body">
+    <main class="login-shell">
+      <section class="login-layout">
+        <article class="login-brand-panel">
+          <p class="eyebrow">Fix Access</p>
+          <h1>Ingreso por rol para el sistema de control de acceso</h1>
+          <p class="lead">
+            Esta es la nueva portada del proyecto. Desde aqui puedes entrar como
+            administrador, creador de ticket, verificador u operador para revisar
+            el flujo segun el perfil.
+          </p>
+
+          <div class="hero-badges">
+            <span>Puerto activo: <strong>2000</strong></span>
+            <span>Modo demo: <strong>Credenciales fijas</strong></span>
+          </div>
+
+          <div class="login-highlights">
+            <article class="highlight-card">
+              <strong>Administrador</strong>
+              <p>Crea usuarios y supervisa todo el proceso.</p>
+            </article>
+            <article class="highlight-card">
+              <strong>Creador</strong>
+              <p>Registra tickets y responde solicitudes urgentes.</p>
+            </article>
+            <article class="highlight-card">
+              <strong>Verificador</strong>
+              <p>Aprueba, observa o rechaza ingresos.</p>
+            </article>
+            <article class="highlight-card">
+              <strong>Operador</strong>
+              <p>Valida el acceso por RUT o carnet desde porteria.</p>
+            </article>
+          </div>
+        </article>
+
+        <article class="login-panel">
+          <div class="login-panel-top">
+            <p class="eyebrow">Acceso</p>
+            <h2>Iniciar sesion</h2>
+            <p class="login-copy">
+              Usa cualquiera de las credenciales demo para entrar segun el rol que
+              quieras revisar.
+            </p>
+          </div>
+
+          <% if (errorMessage) { %>
+            <div class="login-alert"><%= errorMessage %></div>
+          <% } %>
+
+          <form class="login-form" method="post" action="/login">
+            <label for="username">Usuario</label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              value="<%= lastUsername %>"
+              placeholder="admin"
+              autocomplete="username"
+              required
+            />
+
+            <label for="password">Contrasena</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="admin123"
+              autocomplete="current-password"
+              required
+            />
+
+            <button type="submit">Entrar al sistema</button>
+          </form>
+
+          <div class="credential-grid">
+            <% demoAccounts.forEach((account) => { %>
+              <article class="credential-card">
+                <span class="credential-role"><%= account.roleName %></span>
+                <strong><%= account.username %></strong>
+                <p>Contrasena: <code><%= account.password %></code></p>
+              </article>
+            <% }) %>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

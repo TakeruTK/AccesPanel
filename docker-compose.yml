@@ -1,0 +1,10 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fix-access-app
+    ports:
+      - "2000:2000"
+    environment:
+      PORT: 2000
