@@ -62,6 +62,21 @@ body::before {
   gap: 24px;
 }
 
+.login-layout > *,
+.hero > *,
+.dual-layout > *,
+.verification-grid > *,
+.roles-grid > *,
+.workflow-grid > *,
+.request-grid > *,
+.summary-grid > *,
+.app-topbar > *,
+.app-topbar-actions > *,
+.section-heading > *,
+.tool-header > * {
+  min-width: 0;
+}
+
 .login-brand-panel,
 .login-panel {
   border: 1px solid var(--line);
@@ -516,11 +531,35 @@ h2 {
   resize: vertical;
 }
 
+.stack-form input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 0;
+  accent-color: var(--lime);
+}
+
+.stack-form input[type="file"] {
+  padding: 12px;
+}
+
 .stack-form input:focus,
 .stack-form select:focus,
 .stack-form textarea:focus {
   outline: 2px solid rgba(89, 217, 255, 0.5);
   outline-offset: 2px;
+}
+
+.filter-form {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
 }
 
 .action-row,
@@ -570,6 +609,15 @@ h2 {
   filter: brightness(1.03);
 }
 
+.primary-action:disabled,
+.secondary-button:disabled,
+.danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  filter: none;
+}
+
 .secondary-link {
   display: inline-flex;
   align-items: center;
@@ -604,6 +652,113 @@ h2 {
 
 .request-grid {
   grid-template-columns: repeat(3, 1fr);
+}
+
+.report-stack {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.stack-block {
+  margin-top: 20px;
+}
+
+.account-security-layout,
+.creator-mail-layout {
+  align-items: start;
+}
+
+.admin-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.compact-three-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.toggle-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(169, 188, 205, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.toggle-card span {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.info-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.info-chip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(169, 188, 205, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.info-chip span {
+  color: var(--muted);
+}
+
+.embedded-note-card {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(89, 217, 255, 0.18);
+  background: rgba(89, 217, 255, 0.06);
+}
+
+.attachment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(89, 217, 255, 0.16);
+  background: rgba(89, 217, 255, 0.08);
+  color: #dcf7ff;
+  text-decoration: none;
+}
+
+.attachment-chip strong {
+  color: var(--cyan);
+  font-size: 0.8rem;
+}
+
+.wrap-actions {
+  margin-top: 10px;
 }
 
 .role-card,
@@ -679,9 +834,28 @@ h2 {
 }
 
 .table-wrap {
+  max-width: 100%;
+  min-width: 0;
   overflow: auto;
   border-radius: 16px;
   border: 1px solid rgba(169, 188, 205, 0.08);
+}
+
+.tool-panel,
+.table-panel,
+.operator-panel,
+.hero-copy,
+.hero-panel,
+.role-card,
+.workflow-step,
+.request-card,
+.request-card-expanded,
+.verification-card,
+.mini-ticket-card,
+.user-card,
+.summary-card,
+.access-result {
+  min-width: 0;
 }
 
 table {
@@ -722,25 +896,28 @@ th {
 .status-aprobado,
 .status-aprobada,
 .status-cerrada,
-.status-active {
+.status-active,
+.status-ingresado {
   background: rgba(183, 255, 95, 0.14);
   color: var(--lime);
 }
 
 .status-pendiente_verificacion,
-.status-en_revision {
+.status-en_revision,
+.status-pendiente_respuesta {
   background: rgba(255, 155, 84, 0.14);
   color: var(--orange);
 }
 
-.status-observado {
+.status-observado,
+.status-salida_registrada {
   background: rgba(89, 217, 255, 0.14);
   color: var(--cyan);
 }
 
 .status-rechazado,
 .status-rechazada,
-.status-pendiente_respuesta,
+.status-vencido,
 .status-blocked {
   background: rgba(255, 108, 123, 0.14);
   color: var(--red);
@@ -939,6 +1116,15 @@ th {
   padding: 18px;
 }
 
+.sub-panel {
+  margin-top: 18px;
+  padding: 20px;
+}
+
+.operator-action-row form {
+  margin: 0;
+}
+
 .user-card code {
   color: #f2fbff;
 }
@@ -960,6 +1146,10 @@ th {
   color: var(--muted);
 }
 
+small {
+  color: var(--muted);
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -975,6 +1165,7 @@ th {
 @media (max-width: 1100px) {
   .login-layout,
   .summary-grid,
+  .admin-settings-grid,
   .roles-grid,
   .workflow-grid,
   .request-grid,
@@ -985,6 +1176,10 @@ th {
   }
 
   .workflow-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .filter-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -1006,8 +1201,12 @@ th {
   .request-grid,
   .verification-grid,
   .dual-layout,
+  .admin-settings-grid,
+  .toggle-grid,
   .access-details,
-  .form-grid {
+  .compact-three-grid,
+  .form-grid,
+  .filter-grid {
     grid-template-columns: 1fr;
   }
 

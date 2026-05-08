@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="<%= csrfToken %>" />
     <title>Fix Access | Dashboard</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -19,6 +20,7 @@
             <span><%= currentRole ? currentRole.name : currentUser.roleCode %> - @<%= currentUser.username %></span>
           </div>
           <form method="post" action="/logout">
+            <input type="hidden" name="csrfToken" value="<%= csrfToken %>" />
             <button class="logout-button" type="submit">Cerrar sesion</button>
           </form>
         </div>
@@ -30,7 +32,7 @@
           <h1><%= ui.heading %></h1>
           <p class="lead"><%= ui.description %></p>
           <div class="hero-badges">
-            <span>Operacion simulada: <strong><%= operationWindow.label %></strong></span>
+            <span>Operacion actual: <strong><%= operationWindow.label %></strong></span>
             <span>Usuario actual: <strong><%= currentUser.username %></strong></span>
           </div>
         </div>
@@ -64,15 +66,87 @@
         <% }) %>
       </section>
 
+      <section class="panel-section" id="account-security">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Mi cuenta</p>
+            <h2>Credenciales y sesion</h2>
+          </div>
+          <p class="section-copy">
+            Politica actual: <strong><%= passwordPolicySummary %></strong>. La sesion expira tras
+            <strong><%= systemSettings.SECURITY.sessionTimeoutMinutes %> minutos</strong> de inactividad.
+          </p>
+        </div>
+
+        <div class="dual-layout account-security-layout">
+          <article class="tool-panel">
+            <div class="tool-header">
+              <div>
+                <p class="eyebrow">Cambio de contrasena</p>
+                <h3>Actualizar acceso personal</h3>
+              </div>
+            </div>
+
+            <form class="stack-form" method="post" action="/account/password">
+              <div class="form-grid compact-three-grid">
+                <label>
+                  <span>Contrasena actual</span>
+                  <input name="currentPassword" type="password" autocomplete="current-password" required />
+                </label>
+                <label>
+                  <span>Nueva contrasena</span>
+                  <input name="newPassword" type="password" autocomplete="new-password" required />
+                </label>
+                <label>
+                  <span>Confirmar nueva contrasena</span>
+                  <input name="confirmPassword" type="password" autocomplete="new-password" required />
+                </label>
+              </div>
+              <div class="action-row">
+                <button class="primary-action" type="submit">Actualizar contrasena</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="tool-panel">
+            <div class="tool-header">
+              <div>
+                <p class="eyebrow">Estado de seguridad</p>
+                <h3>Politica activa del sistema</h3>
+              </div>
+            </div>
+
+            <div class="info-stack">
+              <div class="info-chip">
+                <span>Intentos maximos de login</span>
+                <strong><%= systemSettings.SECURITY.maxLoginAttempts %></strong>
+              </div>
+              <div class="info-chip">
+                <span>Bloqueo temporal</span>
+                <strong><%= systemSettings.SECURITY.lockoutMinutes %> min</strong>
+              </div>
+              <div class="info-chip">
+                <span>Cookies seguras</span>
+                <strong><%= systemSettings.SECURITY.secureCookies ? "Activadas" : "Desactivadas" %></strong>
+              </div>
+              <div class="info-chip">
+                <span>Credenciales demo visibles</span>
+                <strong><%= systemSettings.SECURITY.showDemoCredentials ? "Si" : "No" %></strong>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <% if (ui.sections.userAdmin) { %>
         <section class="panel-section" id="admin-tools">
           <div class="section-heading">
             <div>
               <p class="eyebrow">Herramientas del administrador</p>
-              <h2>Crear usuarios y controlar accesos internos</h2>
+              <h2>Gestion de usuarios y cuentas</h2>
             </div>
             <p class="section-copy">
-              Solo el administrador puede crear cuentas, asignar roles y bloquear o reactivar usuarios del sistema.
+              Solo el administrador puede crear usuarios, asignar roles y bloquear o reactivar cuentas del sistema.
             </p>
           </div>
 
@@ -86,7 +160,7 @@
               </div>
 
               <p class="panel-copy">
-                Crea administradores, creadores, verificadores u operadores para que cada perfil trabaje solo con sus tareas asignadas.
+                Crea administradores, creadores, verificadores u operadores con credenciales seguras y rol asignado.
               </p>
 
               <form class="stack-form" method="post" action="/admin/users">
@@ -98,6 +172,10 @@
                   <label>
                     <span>Usuario</span>
                     <input name="username" type="text" value="<%= adminForm.fields.username %>" placeholder="operador-norte" required />
+                  </label>
+                  <label>
+                    <span>Correo</span>
+                    <input name="email" type="email" value="<%= adminForm.fields.email %>" placeholder="usuario@empresa.cl" />
                   </label>
                   <label>
                     <span>Contrasena temporal</span>
@@ -135,11 +213,11 @@
                   <article class="user-card">
                     <div class="request-topline">
                       <strong>@<%= account.username %></strong>
-                      <span class="status-pill status-<%= account.status.toLowerCase() %>"><%= account.statusLabel %></span>
+                      <span class="status-pill status-<%= account.statusClass %>"><%= account.statusLabel %></span>
                     </div>
                     <h3><%= account.fullName %></h3>
-                    <p class="request-meta">Rol asignado: <strong><%= account.roleName %></strong></p>
-                    <p class="request-meta">Clave demo: <code><%= account.displayPassword %></code></p>
+                    <p class="request-meta">Rol: <strong><%= account.roleName %></strong></p>
+                    <p class="request-meta">Correo: <strong><%= account.email %></strong></p>
                     <p class="request-time">
                       Creado por <strong><%= account.createdBy %></strong> el <strong><%= account.createdAtLabel %></strong>
                     </p>
@@ -148,8 +226,8 @@
                         <span class="secondary-link static-chip">Sesion actual</span>
                       <% } else { %>
                         <form method="post" action="/admin/users/<%= encodeURIComponent(account.username) %>/toggle-status">
-                          <button class="<%= account.status === 'ACTIVE' ? 'danger-button' : 'secondary-button' %>" type="submit">
-                            <%= account.status === "ACTIVE" ? "Bloquear cuenta" : "Reactivar cuenta" %>
+                          <button class="<%= account.statusCode === 'ACTIVE' ? 'danger-button' : 'secondary-button' %>" type="submit">
+                            <%= account.statusCode === "ACTIVE" ? "Bloquear cuenta" : "Reactivar cuenta" %>
                           </button>
                         </form>
                       <% } %>
@@ -159,6 +237,143 @@
               </div>
             </article>
           </div>
+
+          <div class="stack-block" id="admin-settings">
+            <div class="tool-header">
+              <div>
+                <p class="eyebrow">Configuraciones del administrador</p>
+                <h3>Reglas operativas, seguridad y correo entrante</h3>
+              </div>
+            </div>
+
+            <div class="admin-settings-grid">
+              <article class="tool-panel">
+                <div class="tool-header">
+                  <div>
+                    <p class="eyebrow">Seguridad</p>
+                    <h3>Politica de acceso</h3>
+                  </div>
+                </div>
+                <form class="stack-form" method="post" action="/admin/settings/security">
+                  <div class="form-grid compact-three-grid">
+                    <label>
+                      <span>Timeout de sesion (min)</span>
+                      <input name="sessionTimeoutMinutes" type="number" min="5" value="<%= securityForm.sessionTimeoutMinutes %>" required />
+                    </label>
+                    <label>
+                      <span>Maximo intentos</span>
+                      <input name="maxLoginAttempts" type="number" min="3" value="<%= securityForm.maxLoginAttempts %>" required />
+                    </label>
+                    <label>
+                      <span>Bloqueo (min)</span>
+                      <input name="lockoutMinutes" type="number" min="1" value="<%= securityForm.lockoutMinutes %>" required />
+                    </label>
+                    <label>
+                      <span>Largo minimo clave</span>
+                      <input name="minPasswordLength" type="number" min="8" value="<%= securityForm.minPasswordLength %>" required />
+                    </label>
+                  </div>
+                  <div class="toggle-grid">
+                    <label class="toggle-card">
+                      <input name="requireUppercase" type="checkbox" <%= securityForm.requireUppercase ? "checked" : "" %> />
+                      <span>Exigir mayuscula</span>
+                    </label>
+                    <label class="toggle-card">
+                      <input name="requireLowercase" type="checkbox" <%= securityForm.requireLowercase ? "checked" : "" %> />
+                      <span>Exigir minuscula</span>
+                    </label>
+                    <label class="toggle-card">
+                      <input name="requireDigit" type="checkbox" <%= securityForm.requireDigit ? "checked" : "" %> />
+                      <span>Exigir numero</span>
+                    </label>
+                    <label class="toggle-card">
+                      <input name="requireSpecialChar" type="checkbox" <%= securityForm.requireSpecialChar ? "checked" : "" %> />
+                      <span>Exigir simbolo</span>
+                    </label>
+                    <label class="toggle-card">
+                      <input name="secureCookies" type="checkbox" <%= securityForm.secureCookies ? "checked" : "" %> />
+                      <span>Cookies seguras</span>
+                    </label>
+                    <label class="toggle-card">
+                      <input name="showDemoCredentials" type="checkbox" <%= securityForm.showDemoCredentials ? "checked" : "" %> />
+                      <span>Mostrar credenciales demo</span>
+                    </label>
+                  </div>
+                  <div class="action-row">
+                    <button class="primary-action" type="submit">Guardar seguridad</button>
+                  </div>
+                </form>
+              </article>
+
+              <article class="tool-panel">
+                <div class="tool-header">
+                  <div>
+                    <p class="eyebrow">Operacion</p>
+                    <h3>Ventanas del control de acceso</h3>
+                  </div>
+                </div>
+                <form class="stack-form" method="post" action="/admin/settings/operation">
+                  <div class="form-grid compact-three-grid">
+                    <label>
+                      <span>Tolerancia ingreso anticipado (min)</span>
+                      <input name="earlyEntryToleranceMinutes" type="number" min="0" value="<%= operationSettingsForm.earlyEntryToleranceMinutes %>" required />
+                    </label>
+                    <label>
+                      <span>Tolerancia salida tardia (min)</span>
+                      <input name="lateExitToleranceMinutes" type="number" min="0" value="<%= operationSettingsForm.lateExitToleranceMinutes %>" required />
+                    </label>
+                    <label>
+                      <span>Duracion por defecto (hrs)</span>
+                      <input name="defaultVisitDurationHours" type="number" min="1" value="<%= operationSettingsForm.defaultVisitDurationHours %>" required />
+                    </label>
+                  </div>
+                  <div class="toggle-grid">
+                    <label class="toggle-card">
+                      <input name="strictRutValidation" type="checkbox" <%= operationSettingsForm.strictRutValidation ? "checked" : "" %> />
+                      <span>Validar RUT estrictamente</span>
+                    </label>
+                  </div>
+                  <div class="action-row">
+                    <button class="primary-action" type="submit">Guardar operacion</button>
+                  </div>
+                </form>
+              </article>
+
+              <article class="tool-panel">
+                <div class="tool-header">
+                  <div>
+                    <p class="eyebrow">Correo entrante</p>
+                    <h3>Reglas de ingreso automatico</h3>
+                  </div>
+                </div>
+                <form class="stack-form" method="post" action="/admin/settings/email-intake">
+                  <div class="toggle-grid">
+                    <label class="toggle-card">
+                      <input name="intakeEnabled" type="checkbox" <%= emailSettingsForm.intakeEnabled ? "checked" : "" %> />
+                      <span>Habilitar bandeja entrante</span>
+                    </label>
+                    <label class="toggle-card">
+                      <input name="requireAttachment" type="checkbox" <%= emailSettingsForm.requireAttachment ? "checked" : "" %> />
+                      <span>Exigir adjunto</span>
+                    </label>
+                  </div>
+                  <div class="form-grid">
+                    <label>
+                      <span>Tipos MIME permitidos</span>
+                      <input name="acceptedFileTypes" type="text" value="<%= emailSettingsForm.acceptedFileTypes %>" required />
+                    </label>
+                    <label>
+                      <span>Webhook token</span>
+                      <input name="webhookToken" type="text" value="<%= emailSettingsForm.webhookToken %>" placeholder="token-seguro-correo" />
+                    </label>
+                  </div>
+                  <div class="action-row">
+                    <button class="primary-action" type="submit">Guardar correo entrante</button>
+                  </div>
+                </form>
+              </article>
+            </div>
+          </div>
         </section>
       <% } %>
 
@@ -167,26 +382,214 @@
           <div class="section-heading">
             <div>
               <p class="eyebrow">Herramientas del creador</p>
-              <h2>Crear ticket y responder solicitudes</h2>
+              <h2>Creacion, correccion y respuesta de tickets</h2>
             </div>
             <p class="section-copy">
-              Puedes crear un ticket desde cero o usar una solicitud urgente del operador para precargar los datos.
+              Puedes crear tickets manuales, tomar solicitudes del operador y corregir tickets observados antes de reenviarlos.
             </p>
           </div>
+
+          <div class="dual-layout creator-mail-layout">
+            <article class="tool-panel">
+              <div class="tool-header">
+                <div>
+                  <p class="eyebrow">Correo entrante</p>
+                  <h3>Registrar nueva solicitud por email</h3>
+                </div>
+                <span class="inline-badge">
+                  <%= emailRequests.filter((request) => ["RECEIVED", "IN_REVIEW"].includes(request.statusCode)).length %> por atender
+                </span>
+              </div>
+
+              <p class="panel-copy">
+                Puedes dejar trazado el correo original, adjuntar respaldos y convertirlo despues a ticket formal.
+              </p>
+
+              <form
+                class="stack-form"
+                method="post"
+                action="/creator/email-intake?csrfToken=<%= encodeURIComponent(csrfToken) %>"
+                enctype="multipart/form-data"
+              >
+                <div class="form-grid">
+                  <label>
+                    <span>Nombre remitente</span>
+                    <input name="senderName" type="text" value="<%= emailIntakeForm.fields.senderName %>" placeholder="Marta Salgado" />
+                  </label>
+                  <label>
+                    <span>Correo remitente</span>
+                    <input name="senderEmail" type="email" value="<%= emailIntakeForm.fields.senderEmail %>" placeholder="marta@empresa.cl" required />
+                  </label>
+                  <label>
+                    <span>Asunto</span>
+                    <input name="subject" type="text" value="<%= emailIntakeForm.fields.subject %>" required />
+                  </label>
+                  <label>
+                    <span>Empresa</span>
+                    <input name="companyName" type="text" value="<%= emailIntakeForm.fields.companyName %>" />
+                  </label>
+                  <label>
+                    <span>RUT solicitado</span>
+                    <input name="requestedRut" type="text" value="<%= emailIntakeForm.fields.requestedRut %>" />
+                  </label>
+                  <label>
+                    <span>Nombre</span>
+                    <input name="requestedFirstName" type="text" value="<%= emailIntakeForm.fields.requestedFirstName %>" />
+                  </label>
+                  <label>
+                    <span>Apellido</span>
+                    <input name="requestedLastName" type="text" value="<%= emailIntakeForm.fields.requestedLastName %>" />
+                  </label>
+                  <label>
+                    <span>Responsable interno</span>
+                    <input name="hostName" type="text" value="<%= emailIntakeForm.fields.hostName %>" />
+                  </label>
+                  <label>
+                    <span>Actividad</span>
+                    <input name="activityDescription" type="text" value="<%= emailIntakeForm.fields.activityDescription %>" />
+                  </label>
+                  <label>
+                    <span>Entrada estimada</span>
+                    <input name="desiredEntryAt" type="datetime-local" value="<%= emailIntakeForm.fields.desiredEntryAt %>" />
+                  </label>
+                  <label>
+                    <span>Salida estimada</span>
+                    <input name="desiredExitAt" type="datetime-local" value="<%= emailIntakeForm.fields.desiredExitAt %>" />
+                  </label>
+                  <label>
+                    <span>Adjuntos</span>
+                    <input name="attachments" type="file" multiple />
+                  </label>
+                </div>
+
+                <label class="full-width-label">
+                  <span>Cuerpo del correo</span>
+                  <textarea name="body" rows="5" required><%= emailIntakeForm.fields.body %></textarea>
+                </label>
+
+                <label class="full-width-label">
+                  <span>Notas internas</span>
+                  <textarea name="notes" rows="2"><%= emailIntakeForm.fields.notes %></textarea>
+                </label>
+
+                <div class="action-row">
+                  <button class="primary-action" type="submit">Guardar correo entrante</button>
+                </div>
+              </form>
+            </article>
+
+            <article class="tool-panel">
+              <div class="tool-header">
+                <div>
+                  <p class="eyebrow">Bandeja de correos</p>
+                  <h3>Solicitudes pendientes y convertidas</h3>
+                </div>
+              </div>
+
+              <div class="tool-card-grid">
+                <% emailRequests.forEach((request) => { %>
+                  <article class="request-card request-card-expanded">
+                    <div class="request-topline">
+                      <strong><%= request.intakeCode %></strong>
+                      <span class="status-pill status-<%= request.statusClass %>"><%= request.statusLabel %></span>
+                    </div>
+                    <h3><%= request.subject %></h3>
+                    <p class="request-meta"><%= request.senderName || "Sin nombre" %> - <%= request.senderEmail %></p>
+                    <p class="request-meta">
+                      Solicitud: <%= request.requestedFullName || "Sin persona" %><% if (request.requestedRut) { %> - <%= request.requestedRut %><% } %>
+                    </p>
+                    <p class="request-meta">Empresa: <%= request.companyName || "Sin empresa" %></p>
+                    <p class="request-meta">Responsable: <%= request.hostName || "Sin responsable" %></p>
+                    <p class="request-meta">Horario: <%= request.desiredEntryLabel %> a <%= request.desiredExitLabel %></p>
+                    <p class="request-notes"><strong>Actividad:</strong> <%= request.activityDescription || "Sin detalle" %></p>
+                    <p class="request-notes"><strong>Cuerpo:</strong> <%= request.body %></p>
+                    <% if (request.notes) { %>
+                      <p class="request-response"><strong>Seguimiento:</strong> <%= request.notes %></p>
+                    <% } %>
+                    <% if (request.relatedTicketCode) { %>
+                      <p class="request-response"><strong>Ticket relacionado:</strong> <%= request.relatedTicketCode %></p>
+                    <% } %>
+                    <% const requestAttachments = emailAttachmentsByRequestId[request.id] || []; %>
+                    <% if (requestAttachments.length) { %>
+                      <div class="attachment-list">
+                        <% requestAttachments.forEach((attachment) => { %>
+                          <a class="attachment-chip" href="<%= attachment.downloadUrl %>">
+                            <span><%= attachment.originalName %></span>
+                            <strong><%= attachment.sizeLabel %></strong>
+                          </a>
+                        <% }) %>
+                      </div>
+                    <% } %>
+                    <div class="request-actions wrap-actions">
+                      <% if (request.statusCode === "RECEIVED") { %>
+                        <form method="post" action="/creator/email-intake/<%= request.intakeCode %>/take">
+                          <button class="secondary-button" type="submit">Tomar correo</button>
+                        </form>
+                      <% } %>
+                      <% if (request.statusCode !== "DISMISSED") { %>
+                        <a class="secondary-link" href="/dashboard?emailIntakeCode=<%= request.intakeCode %>#creator-tools">Usar datos para ticket</a>
+                      <% } %>
+                    </div>
+                    <% if (!["DISMISSED", "CONVERTED_TO_TICKET"].includes(request.statusCode)) { %>
+                      <form class="stack-form compact-form" method="post" action="/creator/email-intake/<%= request.intakeCode %>/dismiss">
+                        <label class="full-width-label">
+                          <span>Motivo de descarte</span>
+                          <textarea name="dismissNotes" rows="2" placeholder="Ejemplo: correo duplicado o sin respaldo suficiente."></textarea>
+                        </label>
+                        <div class="action-row">
+                          <button class="danger-button" type="submit">Descartar correo</button>
+                        </div>
+                      </form>
+                    <% } %>
+                  </article>
+                <% }) %>
+              </div>
+            </article>
+          </div>
+
           <div class="dual-layout">
             <article class="tool-panel">
               <div class="tool-header">
                 <div>
-                  <p class="eyebrow">Nuevo ticket</p>
-                  <h3>Formulario de creacion</h3>
+                  <p class="eyebrow"><%= creatorForm.isEditingObserved ? "Ticket observado" : "Nuevo ticket" %></p>
+                  <h3><%= creatorForm.isEditingObserved ? "Correccion y reenvio" : "Formulario de creacion" %></h3>
                 </div>
                 <% if (creatorForm.sourceRequest) { %>
-                  <span class="inline-badge">Origen: <%= creatorForm.sourceRequest.id %></span>
+                  <span class="inline-badge">Origen: <%= creatorForm.sourceRequest.requestCode %></span>
+                <% } %>
+                <% if (creatorForm.observedTicket) { %>
+                  <span class="inline-badge">Editando: <%= creatorForm.observedTicket.ticketCode %></span>
+                <% } %>
+                <% if (creatorForm.sourceEmail) { %>
+                  <span class="inline-badge">Correo: <%= creatorForm.sourceEmail.intakeCode %></span>
                 <% } %>
               </div>
 
               <form class="stack-form" method="post" action="/creator/tickets">
-                <input type="hidden" name="requestId" value="<%= creatorForm.requestId %>" />
+                <input type="hidden" name="requestCode" value="<%= creatorForm.requestCode %>" />
+                <input type="hidden" name="ticketCode" value="<%= creatorForm.ticketCode %>" />
+                <input type="hidden" name="emailIntakeCode" value="<%= creatorForm.emailIntakeCode %>" />
+
+                <% if (creatorForm.sourceEmail) { %>
+                  <article class="embedded-note-card">
+                    <p class="request-meta">
+                      Solicitud tomada desde el correo <strong><%= creatorForm.sourceEmail.intakeCode %></strong> de
+                      <strong><%= creatorForm.sourceEmail.senderEmail %></strong>.
+                    </p>
+                    <% const sourceEmailAttachments = emailAttachmentsByRequestId[creatorForm.sourceEmail.id] || []; %>
+                    <% if (sourceEmailAttachments.length) { %>
+                      <div class="attachment-list">
+                        <% sourceEmailAttachments.forEach((attachment) => { %>
+                          <a class="attachment-chip" href="<%= attachment.downloadUrl %>">
+                            <span><%= attachment.originalName %></span>
+                            <strong><%= attachment.sizeLabel %></strong>
+                          </a>
+                        <% }) %>
+                      </div>
+                    <% } %>
+                  </article>
+                <% } %>
+
                 <div class="form-grid">
                   <label>
                     <span>RUT</span>
@@ -210,41 +613,28 @@
                   </label>
                   <label>
                     <span>Actividad</span>
-                    <input
-                      name="activityDescription"
-                      type="text"
-                      value="<%= creatorForm.fields.activityDescription %>"
-                      required
-                    />
+                    <input name="activityDescription" type="text" value="<%= creatorForm.fields.activityDescription %>" required />
                   </label>
                   <label>
                     <span>Entrada estimada</span>
-                    <input
-                      name="scheduledEntryAt"
-                      type="datetime-local"
-                      value="<%= creatorForm.fields.scheduledEntryAt %>"
-                      required
-                    />
+                    <input name="scheduledEntryAt" type="datetime-local" value="<%= creatorForm.fields.scheduledEntryAt %>" required />
                   </label>
                   <label>
                     <span>Salida estimada</span>
-                    <input
-                      name="scheduledExitAt"
-                      type="datetime-local"
-                      value="<%= creatorForm.fields.scheduledExitAt %>"
-                      required
-                    />
+                    <input name="scheduledExitAt" type="datetime-local" value="<%= creatorForm.fields.scheduledExitAt %>" required />
                   </label>
                 </div>
 
                 <label class="full-width-label">
-                  <span>Notas u observaciones</span>
-                  <textarea name="notes" rows="4"><%= creatorForm.fields.notes %></textarea>
+                  <span>Notas del ticket</span>
+                  <textarea name="ticketNotes" rows="4"><%= creatorForm.fields.ticketNotes %></textarea>
                 </label>
 
                 <div class="action-row">
-                  <button class="primary-action" type="submit">Crear ticket pendiente de verificacion</button>
-                  <% if (creatorForm.sourceRequest) { %>
+                  <button class="primary-action" type="submit">
+                    <%= creatorForm.isEditingObserved ? "Corregir y reenviar a verificacion" : "Crear ticket pendiente de verificacion" %>
+                  </button>
+                  <% if (creatorForm.requestCode || creatorForm.ticketCode) { %>
                     <a class="secondary-link" href="/dashboard#creator-tools">Limpiar formulario</a>
                   <% } %>
                 </div>
@@ -257,42 +647,83 @@
                   <p class="eyebrow">Solicitudes del operador</p>
                   <h3>Bandeja para respuesta</h3>
                 </div>
+                <span class="inline-badge">
+                  <%= allRequests.filter((request) => ["PENDIENTE_RESPUESTA", "EN_REVISION"].includes(request.statusCode)).length %> pendientes
+                </span>
               </div>
 
               <div class="tool-card-grid">
                 <% operatorRequests.forEach((request) => { %>
                   <article class="request-card request-card-expanded">
                     <div class="request-topline">
-                      <strong><%= request.id %></strong>
-                      <span class="status-pill status-<%= request.status.toLowerCase() %>"><%= request.statusLabel %></span>
+                      <strong><%= request.requestCode %></strong>
+                      <span class="status-pill status-<%= request.statusClass %>"><%= request.statusLabel %></span>
                     </div>
                     <h3><%= request.fullName %></h3>
                     <p class="request-meta"><%= request.rut %> - <%= request.company %></p>
                     <p class="request-meta">Responsable: <%= request.hostName %></p>
-                    <p class="request-meta">
-                      Horario solicitado:
-                      <%= request.desiredEntryAt ? request.desiredEntryAt.slice(11, 16) : "--:--" %>
-                      a
-                      <%= request.desiredExitAt ? request.desiredExitAt.slice(11, 16) : "--:--" %>
-                    </p>
+                    <p class="request-meta">Horario solicitado: <%= request.desiredEntryLabel %> a <%= request.desiredExitLabel %></p>
                     <p class="request-notes"><strong>Actividad:</strong> <%= request.activityDescription %></p>
                     <p class="request-notes"><strong>Detalle:</strong> <%= request.notes %></p>
+                    <% if (request.relatedTicketCode) { %>
+                      <p class="request-response"><strong>Ticket relacionado:</strong> <%= request.relatedTicketCode %></p>
+                    <% } %>
                     <% if (request.responseNotes) { %>
                       <p class="request-response"><strong>Seguimiento:</strong> <%= request.responseNotes %></p>
                     <% } %>
                     <div class="request-actions">
-                      <% if (request.status === "PENDIENTE_RESPUESTA") { %>
-                        <form method="post" action="/creator/requests/<%= request.id %>/take">
+                      <% if (request.statusCode === "PENDIENTE_RESPUESTA") { %>
+                        <form method="post" action="/creator/requests/<%= request.requestCode %>/take">
                           <button class="secondary-button" type="submit">Tomar solicitud</button>
                         </form>
                       <% } %>
-                      <a class="secondary-link" href="/dashboard?requestId=<%= request.id %>#creator-tools">Usar datos para ticket</a>
+                      <a class="secondary-link" href="/dashboard?requestCode=<%= request.requestCode %>#creator-tools">Usar datos para ticket</a>
                     </div>
+                    <% if (!["RECHAZADA", "CERRADA"].includes(request.statusCode)) { %>
+                      <form class="stack-form compact-form" method="post" action="/creator/requests/<%= request.requestCode %>/reject">
+                        <label class="full-width-label">
+                          <span>Motivo de rechazo</span>
+                          <textarea name="responseNotes" rows="2" placeholder="Ejemplo: falta respaldo del servicio o responsable interno."></textarea>
+                        </label>
+                        <div class="action-row">
+                          <button class="danger-button" type="submit">Rechazar solicitud</button>
+                        </div>
+                      </form>
+                    <% } %>
                   </article>
                 <% }) %>
               </div>
             </article>
           </div>
+
+          <% if (observedTickets.length) { %>
+            <div class="stack-block">
+              <div class="tool-header">
+                <div>
+                  <p class="eyebrow">Correcciones pendientes</p>
+                  <h3>Tickets observados por el verificador</h3>
+                </div>
+              </div>
+              <div class="tool-card-grid">
+                <% observedTickets.forEach((ticket) => { %>
+                  <article class="mini-ticket-card">
+                    <div class="request-topline">
+                      <strong><%= ticket.ticketCode %></strong>
+                      <span class="status-pill status-<%= ticket.statusClass %>"><%= ticket.statusLabel %></span>
+                    </div>
+                    <p class="request-meta"><%= ticket.person.fullName %> - <%= ticket.person.rut %></p>
+                    <p class="request-meta">Empresa: <%= ticket.company %></p>
+                    <p class="request-notes"><%= ticket.verificationNotes || ticket.ticketNotes %></p>
+                    <div class="request-actions">
+                      <a class="secondary-link" href="/dashboard?ticketCode=<%= ticket.ticketCode %><%= ticket.relatedRequestCode ? `&requestCode=${ticket.relatedRequestCode}` : "" %>#creator-tools">
+                        Corregir ticket
+                      </a>
+                    </div>
+                  </article>
+                <% }) %>
+              </div>
+            </div>
+          <% } %>
         </section>
       <% } %>
 
@@ -328,16 +759,14 @@
                     <article class="verification-card">
                       <div class="request-topline">
                         <strong><%= ticket.ticketCode %></strong>
-                        <span class="status-pill status-<%= ticket.status.toLowerCase() %>"><%= ticket.statusLabel %></span>
+                        <span class="status-pill status-<%= ticket.statusClass %>"><%= ticket.statusLabel %></span>
                       </div>
-                      <h3><%= ticket.person.firstName %> <%= ticket.person.lastName %></h3>
+                      <h3><%= ticket.person.fullName %></h3>
                       <p class="request-meta"><%= ticket.person.rut %> - <%= ticket.company %></p>
                       <p class="request-meta">Responsable: <%= ticket.hostName %></p>
-                      <p class="request-meta">
-                        Horario: <%= ticket.scheduledEntryAt.slice(11, 16) %> a <%= ticket.scheduledExitAt.slice(11, 16) %>
-                      </p>
+                      <p class="request-meta">Horario: <%= ticket.scheduledEntryLabel %> a <%= ticket.scheduledExitLabel %></p>
                       <p class="request-notes"><strong>Actividad:</strong> <%= ticket.activityDescription %></p>
-                      <p class="request-notes"><strong>Notas:</strong> <%= ticket.displayNote %></p>
+                      <p class="request-notes"><strong>Notas:</strong> <%= ticket.verificationNotes || ticket.ticketNotes || "Sin notas" %></p>
 
                       <form class="stack-form compact-form" method="post" action="/verifier/tickets/<%= ticket.ticketCode %>/decision">
                         <label class="full-width-label">
@@ -369,10 +798,10 @@
                   <article class="mini-ticket-card">
                     <div class="request-topline">
                       <strong><%= ticket.ticketCode %></strong>
-                      <span class="status-pill status-<%= ticket.status.toLowerCase() %>"><%= ticket.statusLabel %></span>
+                      <span class="status-pill status-<%= ticket.statusClass %>"><%= ticket.statusLabel %></span>
                     </div>
-                    <p class="request-meta"><%= ticket.person.firstName %> <%= ticket.person.lastName %></p>
-                    <p class="request-notes"><%= ticket.displayNote %></p>
+                    <p class="request-meta"><%= ticket.person.fullName %></p>
+                    <p class="request-notes"><%= ticket.verificationNotes || ticket.rejectionReason || ticket.ticketNotes || "Sin detalle" %></p>
                     <p class="request-time">
                       Verificador:
                       <strong><%= ticket.verifierName || "Pendiente asignacion" %></strong>
@@ -438,6 +867,45 @@
               </div>
               <p class="section-copy"><%= ui.tableDescription %></p>
             </div>
+
+            <form class="filter-form" method="get" action="/dashboard">
+              <div class="filter-grid">
+                <label>
+                  <span>RUT</span>
+                  <input name="rut" type="text" value="<%= filters.rut %>" placeholder="15.123.456-7" />
+                </label>
+                <label>
+                  <span>Empresa</span>
+                  <input name="company" type="text" value="<%= filters.company %>" placeholder="MetalSur" />
+                </label>
+                <label>
+                  <span>Responsable</span>
+                  <input name="hostName" type="text" value="<%= filters.hostName %>" placeholder="Daniela Rojas" />
+                </label>
+                <label>
+                  <span>Estado</span>
+                  <select name="status">
+                    <option value="">Todos</option>
+                    <% statusOptions.forEach((status) => { %>
+                      <option value="<%= status %>" <%= filters.status === status ? "selected" : "" %>><%= status %></option>
+                    <% }) %>
+                  </select>
+                </label>
+                <label>
+                  <span>Desde</span>
+                  <input name="from" type="date" value="<%= filters.from %>" />
+                </label>
+                <label>
+                  <span>Hasta</span>
+                  <input name="to" type="date" value="<%= filters.to %>" />
+                </label>
+              </div>
+              <div class="action-row">
+                <button class="secondary-button" type="submit">Filtrar tickets</button>
+                <a class="secondary-link" href="/dashboard">Limpiar</a>
+              </div>
+            </form>
+
             <div class="table-wrap">
               <table>
                 <thead>
@@ -446,6 +914,7 @@
                     <th>Persona</th>
                     <th>Empresa</th>
                     <th>Responsable</th>
+                    <th>Horario</th>
                     <th>Estado</th>
                     <th>Notas</th>
                   </tr>
@@ -454,15 +923,14 @@
                   <% tickets.forEach((ticket) => { %>
                     <tr>
                       <td><%= ticket.ticketCode %></td>
-                      <td><%= ticket.person.firstName %> <%= ticket.person.lastName %></td>
+                      <td><%= ticket.person.fullName %><br /><small><%= ticket.person.rut %></small></td>
                       <td><%= ticket.company %></td>
                       <td><%= ticket.hostName %></td>
+                      <td><%= ticket.scheduledEntryLabel %><br /><small>hasta <%= ticket.scheduledExitLabel %></small></td>
                       <td>
-                        <span class="status-pill status-<%= ticket.status.toLowerCase() %>">
-                          <%= ticket.statusLabel %>
-                        </span>
+                        <span class="status-pill status-<%= ticket.statusClass %>"><%= ticket.statusLabel %></span>
                       </td>
-                      <td><%= ticket.verificationNotes || ticket.notes %></td>
+                      <td><%= ticket.verificationNotes || ticket.rejectionReason || ticket.ticketNotes || "Sin notas" %></td>
                     </tr>
                   <% }) %>
                 </tbody>
@@ -470,28 +938,33 @@
             </div>
           </div>
 
-          <div class="operator-panel">
+          <div class="operator-panel" id="operator-tools">
             <div class="section-heading compact">
-              <p class="eyebrow">Validacion en porteria</p>
-              <h2>Consulta por RUT</h2>
+              <div>
+                <p class="eyebrow">Validacion en porteria</p>
+                <h2>Consulta, ingreso, salida y escalamiento</h2>
+              </div>
             </div>
+
             <p class="operator-copy">
-              Simula la experiencia del operador Android. Prueba un RUT aprobado,
-              pendiente o no registrado para ver como responde el sistema.
+              Consulta el acceso por RUT, prueba un escaneo demo y registra entrada o salida segun el estado operativo del ticket.
             </p>
 
             <form id="access-check-form" class="access-form">
               <label for="rut">RUT de la persona</label>
               <div class="access-input-row">
-                <input
-                  id="rut"
-                  name="rut"
-                  type="text"
-                  value="<%= initialAccessResult.rut %>"
-                  placeholder="15.123.456-7"
-                  autocomplete="off"
-                />
+                <input id="rut" name="rut" type="text" value="<%= initialAccessResult.rut %>" placeholder="15.123.456-7" autocomplete="off" />
                 <button type="submit">Validar acceso</button>
+              </div>
+            </form>
+
+            <form id="scan-payload-form" class="stack-form compact-form">
+              <label class="full-width-label">
+                <span>Escaneo demo del carnet</span>
+                <textarea id="scan-payload" rows="3" placeholder="Pega el texto del escaneo o un bloque que contenga el RUT para procesarlo."></textarea>
+              </label>
+              <div class="action-row">
+                <button class="secondary-button" type="submit">Procesar escaneo</button>
               </div>
             </form>
 
@@ -501,10 +974,7 @@
               <% }) %>
             </div>
 
-            <article
-              id="access-result-card"
-              class="access-result access-<%= initialAccessResult.severity %>"
-            >
+            <article id="access-result-card" class="access-result access-<%= initialAccessResult.severity %>">
               <div class="access-result-top">
                 <span id="result-icon" class="access-icon"><%= initialAccessResult.icon %></span>
                 <div>
@@ -513,6 +983,10 @@
                 </div>
               </div>
               <dl class="access-details">
+                <div>
+                  <dt>RUT</dt>
+                  <dd id="detail-rut"><%= initialAccessResult.rut %></dd>
+                </div>
                 <div>
                   <dt>Persona</dt>
                   <dd id="detail-person"><%= initialAccessResult.personName %></dd>
@@ -537,11 +1011,84 @@
                   <dt>Horario autorizado</dt>
                   <dd id="detail-schedule"><%= initialAccessResult.scheduleLabel %></dd>
                 </div>
+                <div>
+                  <dt>Actividad</dt>
+                  <dd id="detail-activity"><%= initialAccessResult.activityDescription || "No disponible" %></dd>
+                </div>
               </dl>
               <div class="access-footer">
                 <span>Accion sugerida</span>
                 <strong id="detail-action"><%= initialAccessResult.actionLabel %></strong>
               </div>
+            </article>
+
+            <div class="action-row operator-action-row">
+              <form id="check-in-form" method="post" action="/operator/check-in">
+                <input id="check-in-rut" name="rut" type="hidden" value="<%= initialAccessResult.rut %>" />
+                <input id="check-in-ticket-code" name="ticketCode" type="hidden" value="<%= initialAccessResult.ticketCode %>" />
+                <input id="check-in-source" name="sourceCode" type="hidden" value="RUT" />
+                <button id="check-in-button" class="primary-action" type="submit">Registrar entrada</button>
+              </form>
+              <form id="check-out-form" method="post" action="/operator/check-out">
+                <input id="check-out-rut" name="rut" type="hidden" value="<%= initialAccessResult.rut %>" />
+                <input id="check-out-ticket-code" name="ticketCode" type="hidden" value="<%= initialAccessResult.ticketCode %>" />
+                <input id="check-out-source" name="sourceCode" type="hidden" value="MANUAL" />
+                <button id="check-out-button" class="secondary-button" type="submit">Registrar salida</button>
+              </form>
+            </div>
+
+            <article class="tool-panel sub-panel">
+              <div class="tool-header">
+                <div>
+                  <p class="eyebrow">Solicitud urgente</p>
+                  <h3>Escalar al creador de tickets</h3>
+                </div>
+              </div>
+
+              <form id="operator-request-form" class="stack-form" method="post" action="/operator/requests">
+                <input id="request-source-code" name="sourceCode" type="hidden" value="RUT" />
+                <div class="form-grid">
+                  <label>
+                    <span>RUT</span>
+                    <input id="request-rut" name="rut" type="text" value="<%= initialAccessResult.rut %>" required />
+                  </label>
+                  <label>
+                    <span>Empresa</span>
+                    <input id="request-company" name="company" type="text" value="<%= initialAccessResult.company !== 'No disponible' ? initialAccessResult.company : '' %>" required />
+                  </label>
+                  <label>
+                    <span>Nombre</span>
+                    <input id="request-first-name" name="firstName" type="text" value="<%= initialAccessResult.firstName || '' %>" required />
+                  </label>
+                  <label>
+                    <span>Apellido</span>
+                    <input id="request-last-name" name="lastName" type="text" value="<%= initialAccessResult.lastName || '' %>" required />
+                  </label>
+                  <label>
+                    <span>Responsable interno</span>
+                    <input id="request-host-name" name="hostName" type="text" value="<%= initialAccessResult.hostName !== 'No disponible' ? initialAccessResult.hostName : '' %>" required />
+                  </label>
+                  <label>
+                    <span>Actividad</span>
+                    <input id="request-activity-description" name="activityDescription" type="text" value="<%= initialAccessResult.activityDescription || '' %>" required />
+                  </label>
+                  <label>
+                    <span>Entrada estimada</span>
+                    <input id="request-entry-at" name="desiredEntryAt" type="datetime-local" required />
+                  </label>
+                  <label>
+                    <span>Salida estimada</span>
+                    <input id="request-exit-at" name="desiredExitAt" type="datetime-local" required />
+                  </label>
+                </div>
+                <label class="full-width-label">
+                  <span>Observaciones del operador</span>
+                  <textarea id="request-operator-notes" name="operatorNotes" rows="3" placeholder="Indica por que se eleva la solicitud y cualquier respaldo disponible."></textarea>
+                </label>
+                <div class="action-row">
+                  <button id="request-submit-button" class="danger-button" type="submit">Enviar solicitud urgente</button>
+                </div>
+              </form>
             </article>
           </div>
         </section>
@@ -554,6 +1101,45 @@
             </div>
             <p class="section-copy"><%= ui.tableDescription %></p>
           </div>
+
+          <form class="filter-form" method="get" action="/dashboard">
+            <div class="filter-grid">
+              <label>
+                <span>RUT</span>
+                <input name="rut" type="text" value="<%= filters.rut %>" />
+              </label>
+              <label>
+                <span>Empresa</span>
+                <input name="company" type="text" value="<%= filters.company %>" />
+              </label>
+              <label>
+                <span>Responsable</span>
+                <input name="hostName" type="text" value="<%= filters.hostName %>" />
+              </label>
+              <label>
+                <span>Estado</span>
+                <select name="status">
+                  <option value="">Todos</option>
+                  <% statusOptions.forEach((status) => { %>
+                    <option value="<%= status %>" <%= filters.status === status ? "selected" : "" %>><%= status %></option>
+                  <% }) %>
+                </select>
+              </label>
+              <label>
+                <span>Desde</span>
+                <input name="from" type="date" value="<%= filters.from %>" />
+              </label>
+              <label>
+                <span>Hasta</span>
+                <input name="to" type="date" value="<%= filters.to %>" />
+              </label>
+            </div>
+            <div class="action-row">
+              <button class="secondary-button" type="submit">Filtrar tickets</button>
+              <a class="secondary-link" href="/dashboard">Limpiar</a>
+            </div>
+          </form>
+
           <div class="table-wrap">
             <table>
               <thead>
@@ -562,6 +1148,7 @@
                   <th>Persona</th>
                   <th>Empresa</th>
                   <th>Responsable</th>
+                  <th>Horario</th>
                   <th>Estado</th>
                   <th>Notas</th>
                 </tr>
@@ -570,15 +1157,12 @@
                 <% tickets.forEach((ticket) => { %>
                   <tr>
                     <td><%= ticket.ticketCode %></td>
-                    <td><%= ticket.person.firstName %> <%= ticket.person.lastName %></td>
+                    <td><%= ticket.person.fullName %><br /><small><%= ticket.person.rut %></small></td>
                     <td><%= ticket.company %></td>
                     <td><%= ticket.hostName %></td>
-                    <td>
-                      <span class="status-pill status-<%= ticket.status.toLowerCase() %>">
-                        <%= ticket.statusLabel %>
-                      </span>
-                    </td>
-                    <td><%= ticket.verificationNotes || ticket.notes %></td>
+                    <td><%= ticket.scheduledEntryLabel %><br /><small>hasta <%= ticket.scheduledExitLabel %></small></td>
+                    <td><span class="status-pill status-<%= ticket.statusClass %>"><%= ticket.statusLabel %></span></td>
+                    <td><%= ticket.verificationNotes || ticket.rejectionReason || ticket.ticketNotes || "Sin notas" %></td>
                   </tr>
                 <% }) %>
               </tbody>
@@ -590,15 +1174,18 @@
       <% if (ui.sections.requests && !ui.sections.creatorTools) { %>
         <section class="panel-section">
           <div class="section-heading">
-            <p class="eyebrow">Escalamiento del operador</p>
-            <h2>Solicitudes urgentes</h2>
+            <div>
+              <p class="eyebrow">Escalamiento del operador</p>
+              <h2>Solicitudes urgentes</h2>
+            </div>
+            <p class="section-copy">Bandeja visible para seguimiento operativo de porteria.</p>
           </div>
           <div class="request-grid">
             <% operatorRequests.forEach((request) => { %>
               <article class="request-card">
                 <div class="request-topline">
-                  <strong><%= request.id %></strong>
-                  <span class="status-pill status-<%= request.status.toLowerCase() %>"><%= request.statusLabel %></span>
+                  <strong><%= request.requestCode %></strong>
+                  <span class="status-pill status-<%= request.statusClass %>"><%= request.statusLabel %></span>
                 </div>
                 <h3><%= request.fullName %></h3>
                 <p class="request-meta"><%= request.rut %> - <%= request.company %></p>
@@ -607,17 +1194,178 @@
                 <% if (request.responseNotes) { %>
                   <p class="request-response"><strong>Seguimiento:</strong> <%= request.responseNotes %></p>
                 <% } %>
-                <p class="request-time">Elevada a las <strong><%= request.requestedAt %></strong></p>
+                <p class="request-time">Elevada el <strong><%= request.createdAtLabel %></strong></p>
               </article>
             <% }) %>
           </div>
         </section>
       <% } %>
+
+      <% if (ui.sections.reports) { %>
+        <section class="panel-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Reportes y trazabilidad</p>
+              <h2>Historial de accesos y auditoria</h2>
+            </div>
+            <p class="section-copy">
+              Filtra por fecha, empresa, responsable y estado. Tambien puedes exportar tickets y eventos en CSV.
+            </p>
+          </div>
+
+          <form class="filter-form" method="get" action="/dashboard">
+            <div class="filter-grid">
+              <label>
+                <span>RUT</span>
+                <input name="rut" type="text" value="<%= filters.rut %>" placeholder="15.123.456-7" />
+              </label>
+              <label>
+                <span>Empresa</span>
+                <input name="company" type="text" value="<%= filters.company %>" placeholder="MetalSur" />
+              </label>
+              <label>
+                <span>Responsable</span>
+                <input name="hostName" type="text" value="<%= filters.hostName %>" placeholder="Daniela Rojas" />
+              </label>
+              <label>
+                <span>Estado ticket</span>
+                <select name="status">
+                  <option value="">Todos</option>
+                  <% statusOptions.forEach((status) => { %>
+                    <option value="<%= status %>" <%= filters.status === status ? "selected" : "" %>><%= status %></option>
+                  <% }) %>
+                </select>
+              </label>
+              <label>
+                <span>Estado solicitud</span>
+                <select name="requestStatus">
+                  <option value="">Todos</option>
+                  <% requestStatusOptions.forEach((status) => { %>
+                    <option value="<%= status %>" <%= filters.requestStatus === status ? "selected" : "" %>><%= status %></option>
+                  <% }) %>
+                </select>
+              </label>
+              <label>
+                <span>Desde</span>
+                <input name="from" type="date" value="<%= filters.from %>" />
+              </label>
+              <label>
+                <span>Hasta</span>
+                <input name="to" type="date" value="<%= filters.to %>" />
+              </label>
+            </div>
+            <div class="action-row">
+              <button class="secondary-button" type="submit">Aplicar filtros</button>
+              <a class="secondary-link" href="/dashboard">Limpiar</a>
+              <a class="secondary-link" href="<%= reportLinks.ticketsCsv %>">Exportar tickets CSV</a>
+              <a class="secondary-link" href="<%= reportLinks.accessEventsCsv %>">Exportar accesos CSV</a>
+            </div>
+          </form>
+
+          <div class="report-stack">
+            <article class="tool-panel">
+              <div class="tool-header">
+                <div>
+                  <p class="eyebrow">Accesos registrados</p>
+                  <h3>Entrada, salida, lookup y denegaciones</h3>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Evento</th>
+                      <th>Ticket</th>
+                      <th>Persona</th>
+                      <th>Empresa</th>
+                      <th>Origen</th>
+                      <th>Operador</th>
+                      <th>Notas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% accessEvents.forEach((event) => { %>
+                      <tr>
+                        <td><%= event.observedAtLabel %></td>
+                        <td><%= event.eventTypeLabel %></td>
+                        <td><%= event.ticketCode %></td>
+                        <td><%= event.personName %><br /><small><%= event.rut || "Sin RUT" %></small></td>
+                        <td><%= event.company %></td>
+                        <td><%= event.sourceLabel %></td>
+                        <td><%= event.operatorName %></td>
+                        <td><%= event.notes %></td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="tool-panel">
+              <div class="tool-header">
+                <div>
+                  <p class="eyebrow">Auditoria</p>
+                  <h3>Acciones criticas del sistema</h3>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Usuario</th>
+                      <th>Accion</th>
+                      <th>Entidad</th>
+                      <th>Detalle</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% auditLogs.forEach((log) => { %>
+                      <tr>
+                        <td><%= log.createdAtLabel %></td>
+                        <td><%= log.userName %></td>
+                        <td><%= log.action %></td>
+                        <td><%= log.entityType %><%= log.entityId ? ` #${log.entityId}` : "" %></td>
+                        <td><code><%= log.detailsText %></code></td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+        </section>
+      <% } %>
     </div>
+
+    <script>
+      (() => {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+        if (!csrfToken) {
+          return;
+        }
+
+        document.querySelectorAll('form[method="post"]').forEach((form) => {
+          if (form.querySelector('input[name="csrfToken"]')) {
+            return;
+          }
+
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = "csrfToken";
+          input.value = csrfToken;
+          form.appendChild(input);
+        });
+      })();
+    </script>
 
     <% if (ui.sections.access) { %>
       <script>
         window.fixAccessInitialResult = <%- serializedInitialAccessResult %>;
+        window.fixAccessConfig = {
+          defaultVisitDurationHours: <%= Number(systemSettings.OPERATION.defaultVisitDurationHours || 2) %>,
+        };
       </script>
       <script src="/app.js"></script>
     <% } %>

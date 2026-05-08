@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
     <title>Fix Access | Login</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -20,7 +21,7 @@
 
           <div class="hero-badges">
             <span>Puerto activo: <strong>2000</strong></span>
-            <span>Modo demo: <strong>Credenciales fijas</strong></span>
+            <span>Seguridad: <strong><%= showDemoCredentials ? "Credenciales demo visibles" : "Credenciales ocultas" %></strong></span>
           </div>
 
           <div class="login-highlights">
@@ -48,8 +49,7 @@
             <p class="eyebrow">Acceso</p>
             <h2>Iniciar sesion</h2>
             <p class="login-copy">
-              Usa cualquiera de las credenciales demo para entrar segun el rol que
-              quieras revisar.
+              <%= showDemoCredentials ? "Usa cualquiera de las credenciales demo para entrar segun el rol que quieras revisar." : "Ingresa con una cuenta habilitada para acceder al panel correspondiente." %>
             </p>
           </div>
 
@@ -58,6 +58,7 @@
           <% } %>
 
           <form class="login-form" method="post" action="/login">
+            <input type="hidden" name="csrfToken" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
             <label for="username">Usuario</label>
             <input
               id="username"
@@ -82,15 +83,17 @@
             <button type="submit">Entrar al sistema</button>
           </form>
 
-          <div class="credential-grid">
-            <% demoAccounts.forEach((account) => { %>
-              <article class="credential-card">
-                <span class="credential-role"><%= account.roleName %></span>
-                <strong><%= account.username %></strong>
-                <p>Contrasena: <code><%= account.password %></code></p>
-              </article>
-            <% }) %>
-          </div>
+          <% if (showDemoCredentials) { %>
+            <div class="credential-grid">
+              <% demoAccounts.forEach((account) => { %>
+                <article class="credential-card">
+                  <span class="credential-role"><%= account.roleName %></span>
+                  <strong><%= account.username %></strong>
+                  <p>Contrasena: <code><%= account.password %></code></p>
+                </article>
+              <% }) %>
+            </div>
+          <% } %>
         </article>
       </section>
     </main>
